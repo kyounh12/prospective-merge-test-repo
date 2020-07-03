@@ -58,4 +58,4 @@ workflows:
             branches:
               ignore: master
 orbs:
-  ghpr: narrativescience/ghpr@x.y.z
+  ghpr: narrativescience/ghpr@1.0.3
