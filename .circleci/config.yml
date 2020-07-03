@@ -1,0 +1,61 @@
+# .circleci/config.yml
+version: 2.1
+jobs:
+  release:
+    macos:
+      xcode: "11.0.0"
+    environment:
+      FL_OUTPUT_DIR: output
+      FASTLANE_LANE: release
+    shell: /bin/bash --login -o pipefail
+    steps:
+      - checkout
+      - run: git submodule init && git submodule update
+      - run:
+          name: Copy & Replace constants values using Environment vars
+          command: ./copy_and_replace_constants.sh
+      - run:
+          name: Install CocoaPods
+          command: pod install
+          no_output_timeout: 30m
+      - run:
+          name: Fastlane upload to appstore
+          command: fastlane $FASTLANE_LANE
+          no_output_timeout: 30m
+      - store_artifacts:
+          path: output
+      - run:
+          name: Upload DYSM to Crashlytics
+          command: ./Pods/Fabric/upload-symbols -gsp ./MVLCustomer/GoogleService-Info.plist -p ios $FL_OUTPUT_DIR/gym
+  perspective-merge-test:
+    machine: true
+    steps:
+      - ghpr/build-prospective-branch
+      - run: git submodule init && git submodule update
+      - run:
+          name: Copy & Replace constants values using Environment vars
+          command: ./copy_and_replace_constants.sh
+      - run:
+          name: Install CocoaPods
+          command: pod install
+          no_output_timeout: 30m
+      - run:
+          name: Fastlane Scan
+          command: fastlane scan
+          no_output_timeout: 30m
+workflows:
+  version: 2
+  release:
+    jobs:
+      - release:
+          filters:
+            branches:
+              only: dist
+  pr-test:
+    jobs:
+      - perspective-merge-test:
+          filters:
+            branches:
+              ignore: master
+orbs:
+  ghpr: narrativescience/ghpr@x.y.z
