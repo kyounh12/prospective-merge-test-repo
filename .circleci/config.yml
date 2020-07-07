@@ -44,7 +44,7 @@ jobs:
           command: fastlane scan
           no_output_timeout: 30m
 workflows:
-  version: 2
+  version: 2.1
   release:
     jobs:
       - release:
